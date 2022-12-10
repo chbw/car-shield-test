@@ -27,12 +27,15 @@ EdgeDetect ed_dipped_beam_out;
 EdgeDetect ed_high_beam_out;
 
 void setup() {
+  // enable outputs
   pinMode(LED_DIPPED_BEAM, OUTPUT);
   pinMode(LED_HIGH_BEAM, OUTPUT);
   pinMode(LED_TURN_RIGHT, OUTPUT);
   pinMode(LED_TURN_LEFT, OUTPUT);
   pinMode(LED_BREAK, OUTPUT);
   pinMode(LED_SPEED_INDICATOR, OUTPUT);
+
+  // initialize state
   ed_left.begin(digitalRead(SW_LEFT));
   ed_right.begin(digitalRead(SW_RIGHT));
   ed_stop.begin(digitalRead(SW_STOP));
@@ -47,6 +50,7 @@ void setup() {
 }
 
 void loop() {
+  // read inputs and update state
   ed_left.update(digitalRead(SW_LEFT));
   ed_right.update(digitalRead(SW_RIGHT));
   ed_stop.update(digitalRead(SW_STOP));
@@ -59,7 +63,7 @@ void loop() {
   ed_dipped_beam_out.update(t_dipped_beam.getState());
   ed_high_beam_out.update(t_high_beam.getState());
 
-  //  
+  // turn lights need special attention
   if (ed_left.getEdge() == EdgeDetect::Falling) {
     b_left.setBlinking(!b_left.isBlinking());
     b_right.stop();
@@ -73,6 +77,7 @@ void loop() {
     b_right.stop();
   }
 
+  // head lights need special attention
   if (ed_high_beam_out.getEdge() == EdgeDetect::Rising) {
     t_dipped_beam.setState(true);
   }
@@ -80,6 +85,7 @@ void loop() {
     t_high_beam.setState(false);
   }
 
+  // write outputs
   digitalWrite(LED_TURN_LEFT, b_left.getState());
   digitalWrite(LED_TURN_RIGHT, b_right.getState());
 
