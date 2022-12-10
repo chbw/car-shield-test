@@ -27,8 +27,7 @@ public:
     _t_on = t_on_ms;
     _t_off = t_off_ms;
   }
-  void start() { start(true); }
-  void start(bool initial_value) {
+  void start(bool initial_value = true) {
     _blinking = true;
     _state = initial_value;
     _start_time = millis();

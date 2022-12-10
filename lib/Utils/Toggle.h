@@ -15,9 +15,8 @@
 
 class Toggle {
 public:
-  void begin() { begin(false, EdgeDetect::Falling); }
-  void begin(bool initial_state) { begin(initial_state, EdgeDetect::Falling); }
-  void begin(bool initial_state, EdgeDetect::Edge edge) {
+  void begin(bool initial_state = false,
+             EdgeDetect::Edge edge = EdgeDetect::Falling) {
     _state = initial_state;
     _edge = edge;
   }
