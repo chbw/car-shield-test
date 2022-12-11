@@ -4,15 +4,22 @@
  * @brief Test/demo software for the car-shield
  * @version 0.1
  * @date 2022-12-10
- * 
+ *
  * @copyright Copyright (c) 2022
- * 
+ *
  */
 
 #include <Blink.h>
 #include <CarShield.h>
 #include <EdgeDetect.h>
+#include <Integrate.h>
 #include <Toggle.h>
+
+/**
+ * @brief How long it takes to full speed.
+ *
+ */
+const long ACCEL_TIME = 1000;
 
 EdgeDetect ed_left;
 EdgeDetect ed_right;
@@ -25,9 +32,10 @@ Toggle t_dipped_beam;
 Toggle t_high_beam;
 EdgeDetect ed_dipped_beam_out;
 EdgeDetect ed_high_beam_out;
+Integrate i_accel;
 
 void setup() {
-  // enable outputs
+  // Enable outputs.
   pinMode(LED_DIPPED_BEAM, OUTPUT);
   pinMode(LED_HIGH_BEAM, OUTPUT);
   pinMode(LED_TURN_RIGHT, OUTPUT);
@@ -35,7 +43,7 @@ void setup() {
   pinMode(LED_BREAK, OUTPUT);
   pinMode(LED_SPEED_INDICATOR, OUTPUT);
 
-  // initialize state
+  // Initialize state.
   ed_left.begin(digitalRead(SW_LEFT));
   ed_right.begin(digitalRead(SW_RIGHT));
   ed_stop.begin(digitalRead(SW_STOP));
@@ -47,10 +55,11 @@ void setup() {
   t_high_beam.begin();
   ed_dipped_beam_out.begin(t_dipped_beam.getState());
   ed_high_beam_out.begin(t_high_beam.getState());
+  i_accel.begin();
 }
 
 void loop() {
-  // read inputs and update state
+  // Read inputs and update state.
   ed_left.update(digitalRead(SW_LEFT));
   ed_right.update(digitalRead(SW_RIGHT));
   ed_stop.update(digitalRead(SW_STOP));
@@ -62,8 +71,13 @@ void loop() {
   t_high_beam.update(ed_high_beam.getEdge());
   ed_dipped_beam_out.update(t_dipped_beam.getState());
   ed_high_beam_out.update(t_high_beam.getState());
+  // Double pedal drive FTW!
+  i_accel.update((digitalRead(SW_ACCEL) ? 0 : 1) +
+                 (digitalRead(SW_DECEL) ? 0 : -1));
+  // Make sure the integrator stays within reasonable bounds.
+  i_accel.coerce(0, ACCEL_TIME);
 
-  // turn lights need special attention
+  // The turn lights need additional attention/logic.
   if (ed_left.getEdge() == EdgeDetect::Falling) {
     b_left.setBlinking(!b_left.isBlinking());
     b_right.stop();
@@ -77,7 +91,7 @@ void loop() {
     b_right.stop();
   }
 
-  // head lights need special attention
+  // The head lights need additional attention/logic.
   if (ed_high_beam_out.getEdge() == EdgeDetect::Rising) {
     t_dipped_beam.setState(true);
   }
@@ -85,7 +99,7 @@ void loop() {
     t_high_beam.setState(false);
   }
 
-  // write outputs
+  // Write outputs.
   digitalWrite(LED_TURN_LEFT, b_left.getState());
   digitalWrite(LED_TURN_RIGHT, b_right.getState());
 
@@ -93,5 +107,8 @@ void loop() {
   digitalWrite(LED_HIGH_BEAM, t_high_beam.getState());
 
   digitalWrite(LED_BREAK, !digitalRead(SW_DECEL));
-  digitalWrite(LED_SPEED_INDICATOR, !digitalRead(SW_ACCEL));
+
+  // The speed indicator is actually analog (PWM).
+  analogWrite(LED_SPEED_INDICATOR,
+              map(i_accel.getState(), 0, ACCEL_TIME, 0, 255));
 }
