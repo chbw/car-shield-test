@@ -56,6 +56,10 @@ void setup() {
   ed_dipped_beam_out.begin(t_dipped_beam.getState());
   ed_high_beam_out.begin(t_high_beam.getState());
   i_accel.begin();
+
+  // speed up PWM on timer1 (make it non-audible)
+  TCCR1B &= ~7;
+  TCCR1B |= 1;
 }
 
 void loop() {
