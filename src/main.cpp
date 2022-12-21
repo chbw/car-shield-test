@@ -65,6 +65,10 @@ void setup() {
   i_accel.begin();
 
   CAN.begin(CAN_500KBPS);
+
+  // speed up PWM on timer1 (make it non-audible)
+  TCCR1B &= ~7;
+  TCCR1B |= 1;
 }
 
 void loop() {
