@@ -9,11 +9,15 @@
  *
  */
 
+#include <Arduino.h>
+#include <SPI.h>
+
 #include <Blink.h>
 #include <CarShield.h>
 #include <EdgeDetect.h>
 #include <Integrate.h>
 #include <Toggle.h>
+#include <mcp2515_can.h>
 
 /**
  * @brief How long it takes to full speed.
@@ -33,6 +37,9 @@ Toggle t_high_beam;
 EdgeDetect ed_dipped_beam_out;
 EdgeDetect ed_high_beam_out;
 Integrate i_accel;
+
+const int SPI_CS_PIN = 9;
+mcp2515_can CAN(SPI_CS_PIN);
 
 void setup() {
   // Enable outputs.
@@ -56,6 +63,8 @@ void setup() {
   ed_dipped_beam_out.begin(t_dipped_beam.getState());
   ed_high_beam_out.begin(t_high_beam.getState());
   i_accel.begin();
+
+  CAN.begin(CAN_500KBPS);
 }
 
 void loop() {
@@ -111,4 +120,13 @@ void loop() {
   // The speed indicator is actually analog (PWM).
   analogWrite(LED_SPEED_INDICATOR,
               map(i_accel.getState(), 0, ACCEL_TIME, 0, 255));
+
+  byte stmp[2];
+  stmp[0] = b_left.getState() << 7 | 
+            b_right.getState() << 6 |
+            t_dipped_beam.getState() << 5 |
+            t_high_beam.getState() << 4 |
+            !digitalRead(SW_DECEL) << 3;
+  stmp[1] = map(i_accel.getState(), 0, ACCEL_TIME, 0, 255);
+  CAN.sendMsgBuf(0, 0, 2, stmp);
 }
